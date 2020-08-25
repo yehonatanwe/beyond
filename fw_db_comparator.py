@@ -1,5 +1,10 @@
-from consts import THREAD_POOL_SIZE
+import consts
+import json
+from logging import getLogger
 from multiprocessing.dummy import Pool
+
+
+logger = getLogger(consts.LOGGER)
 
 
 class FwDbComparator:
@@ -11,14 +16,14 @@ class FwDbComparator:
 
     def compare_record(self, fw_log):
         for r in self.db_records:
-            if r['Service domain'] in fw_log.get('DOMAIN', ''):
+            if r['Service domain'] in getattr(fw_log, 'DOMAIN', ''):
                 return r['Service name']
 
     def compare_records(self, fw_logs):
-        with Pool(THREAD_POOL_SIZE) as pool:
+        logger.debug('Starting comparison cycle')
+        with Pool(consts.THREAD_POOL_SIZE) as pool:
             results = pool.map(self.compare_record, fw_logs)
         for r in results:
             if r in self.matches:
                 self.matches[r] += 1
-        import json
-        print(f'current matches: {json.dumps(self.matches)}')
+        logger.debug(f'current matches: {json.dumps(self.matches)}')
